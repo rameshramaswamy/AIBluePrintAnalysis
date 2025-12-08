@@ -1,0 +1,12 @@
+-r requirements-api.txt
+celery
+numpy
+opencv-python-headless
+shapely
+rapidfuzz
+pdf2image
+paddlepaddle
+paddleocr
+ultralytics
+torch
+torchvision

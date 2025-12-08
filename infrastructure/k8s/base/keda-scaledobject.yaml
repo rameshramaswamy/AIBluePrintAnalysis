@@ -1,0 +1,16 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: blueprint-worker-scaler
+  namespace: blueprint-ai
+spec:
+  scaleTargetRef:
+    name: blueprint-worker
+  minReplicaCount: 0  # Scale to Zero if no work! (Saves $$$)
+  maxReplicaCount: 10
+  triggers:
+  - type: redis
+    metadata:
+      addressFromEnv: REDIS_URL
+      listName: blueprint_tasks # Celery list key
+      listLength: "5" # Target 5 jobs per worker

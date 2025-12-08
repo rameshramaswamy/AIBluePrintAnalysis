@@ -1,0 +1,27 @@
+# Stage 1: Builder
+FROM python:3.10-slim as builder
+WORKDIR /app
+COPY requirements-api.txt .
+RUN pip install --user --no-cache-dir -r requirements-api.txt
+
+# Stage 2: Runtime
+FROM python:3.10-slim
+WORKDIR /app
+
+# Install minimal system deps (Postgres client)
+RUN apt-get update && apt-get install -y libpq5 && rm -rf /var/lib/apt/lists/*
+
+# Copy python packages
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH=/app
+
+# Copy Code
+COPY blueprint_brain/ blueprint_brain/
+
+# Run as non-root
+RUN useradd -m appuser
+USER appuser
+
+EXPOSE 8000
+CMD ["uvicorn", "blueprint_brain.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

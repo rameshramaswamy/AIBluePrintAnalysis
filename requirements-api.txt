@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+redis
+boto3
+tenacity
+python-multipart
+prometheus-fastapi-instrumentator
+slowapi
+pydantic
+pydantic-settings
+python-json-logger

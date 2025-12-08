@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blueprint-config
+  namespace: blueprint-ai
+data:
+  LOG_LEVEL: "INFO"
+  S3_BUCKET_NAME: "blueprints-prod"
+  AWS_REGION: "us-east-1"
+  # In Prod, use external managed services (RDS/ElastiCache)
+  # These are placeholders for the internal K8s services defined below
+  REDIS_URL: "redis://blueprint-redis:6379/0"

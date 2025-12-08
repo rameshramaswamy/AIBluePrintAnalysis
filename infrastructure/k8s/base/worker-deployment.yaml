@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blueprint-worker
+  namespace: blueprint-ai
+spec:
+  replicas: 1 # Scaled by KEDA
+  selector:
+    matchLabels:
+      app: blueprint-worker
+  template:
+    metadata:
+      labels:
+        app: blueprint-worker
+    spec:
+      containers:
+      - name: worker
+        image: your-registry/blueprint-worker:latest
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: blueprint-config
+        - secretRef:
+            name: blueprint-secrets
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # Request 1 GPU per pod
+      # Run only on nodes with label: accelerator=nvidia-tesla
+      nodeSelector:
+        accelerator: nvidia-tesla
+      # Tolerate the Taint applied to GPU nodes so standard pods don't schedule there
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"

@@ -1,0 +1,84 @@
+version: "3.8"
+
+services:
+
+ postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: blueprint_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 1. Message Broker & Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # 2. Object Storage (S3 Compatible)
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  # 3. Create Default Bucket (Helper)
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until (mc alias set myminio http://minio:9000 minioadmin minioadmin); do echo '...waiting...' && sleep 1; done;
+      mc mb myminio/blueprints || echo 'Bucket already exists';
+      "
+
+  # 4. The API Service
+  api:
+    build: .
+    command: uvicorn blueprint_brain.api.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - minio
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - S3_ENDPOINT=http://minio:9000
+      - AWS_ACCESS_KEY=minioadmin
+      - AWS_SECRET_KEY=minioadmin
+
+  # 5. The Async Worker
+  worker:
+    build: .
+    command: celery -A blueprint_brain.worker.celery_app worker --loglevel=info
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    depends_on:
+      - redis
+      - minio
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - S3_ENDPOINT=http://minio:9000
+      - AWS_ACCESS_KEY=minioadmin
+      - AWS_SECRET_KEY=minioadmin
+      # Force Engines to use CPU if GPU fails (fallback)
+      - CUDA_VISIBLE_DEVICES=0
+
+volumes:
+  minio_data:

@@ -1,0 +1,27 @@
+fastapi
+uvicorn
+celery
+redis
+boto3
+python-multipart
+pydantic
+pydantic-settings
+numpy
+opencv-python-headless
+shapely
+rapidfuzz
+pdf2image
+paddlepaddle
+paddleocr
+ultralytics
+# torch is usually installed separately for GPU, but for CPU dev:
+torch
+torchvision
+tenacity
+slowapi
+python-json-logger
+starlette-context
+prometheus-fastapi-instrumentator
+sqlalchemy
+psycopg2-binary
+alembic
